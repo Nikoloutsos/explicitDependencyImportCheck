@@ -1,0 +1,15 @@
+{
+    "schemaVersion": "1.0",
+    "artifacts": {
+        "sitrep": {
+            "version": "3.0.0",
+            "type": "executable",
+            "variants": [
+                {
+                    "path": "sitrep-3.0.0-macos/bin/sitrep",
+                    "supportedTriples": ["x86_64-apple-macosx", "arm64-apple-macosx"]
+                }
+            ]
+        }
+    }
+}
