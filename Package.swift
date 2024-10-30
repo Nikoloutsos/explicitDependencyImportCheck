@@ -13,8 +13,8 @@ let package = Package(
         .plugin(
             name: "explicitDependencyImportCheckPlugin",
             capability: .buildTool(),
-            dependencies: ["sitrep"]
+            dependencies: ["sitrepExplicitDependencyImportCheck"]
         ),
-        .binaryTarget(name: "sitrep", path: "./artifactbundles/sitrep.artifactbundle")
+        .binaryTarget(name: "sitrepExplicitDependencyImportCheck", path: "./artifactbundles/Sitrep.artifactbundle")
     ]
 )

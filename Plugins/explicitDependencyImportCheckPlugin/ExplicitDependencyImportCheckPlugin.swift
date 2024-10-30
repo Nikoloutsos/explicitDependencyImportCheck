@@ -51,7 +51,9 @@ extension ExplicitDependencyImportCheckPlugin {
                 "UIKit",
                 "SwiftUI",
                 "Combine",
-                "CoreData"
+                "CoreData",
+                "Webkit",
+                "OSLog"
             ]
         )
     }
@@ -80,9 +82,8 @@ extension ExplicitDependencyImportCheckPlugin {
         let sitrepResponse = try jsonDecoder.decode(SitrepResponse.self, from: dataFromOutputPipe)
         
         let rawDependencies = sitrepResponse.imports
-            .compactMap { $0.targetName.split(separator: ".").first } // Work with alternative importing style ```import stuct Foo.Bar```
+            .compactMap { $0.targetName.split(separator: ".").first?.trimmingCharacters(in: .whitespaces) } // Work with alternative importing style ```import stuct Foo.Bar```
             .map { String($0)}
-        
         return Set(rawDependencies)
     }
 }
