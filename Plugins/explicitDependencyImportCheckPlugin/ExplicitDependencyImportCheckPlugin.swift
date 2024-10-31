@@ -7,7 +7,7 @@ struct ExplicitDependencyImportCheckPlugin: BuildToolPlugin {
         let dependeniesNames = findSpmTargetDependencies(fromTarget: target)
         let sitrepResponse = try findImportsUsedInCode(context: context, path: target.directory.string)
         let transitiveDependencies = sitrepResponse.subtracting(dependeniesNames)
-        let transitiveDependenciesWithoutCommon = transitiveDependencies.subtracting(commonDependencies)
+        let transitiveDependenciesWithoutCommon = transitiveDependencies.subtracting(systemLibraries)
         guard transitiveDependenciesWithoutCommon.isEmpty == false else { return [] }
         return [
             try exportTransitiveDependenciesAsErrors(
@@ -39,23 +39,6 @@ extension ExplicitDependencyImportCheckPlugin {
             environment: [:]
        )
         
-    }
-}
-
-extension ExplicitDependencyImportCheckPlugin {
-    /// These should not be considered as transitive dependencies.
-    var commonDependencies: Set<String> {
-        Set<String>(
-            [
-                "Foundation",
-                "UIKit",
-                "SwiftUI",
-                "Combine",
-                "CoreData",
-                "Webkit",
-                "OSLog"
-            ]
-        )
     }
 }
 
