@@ -60,13 +60,13 @@ extension ExplicitDependencyImportCheckPlugin {
     ) throws -> [Command] {
         guard !unusedDependencies.isEmpty else { return [] }
 
-        var warningText = "warning: \(unusedDependencies.count) Unused dependencies found for \(target.name) ⚠️⚠️\n"
-        warningText += unusedDependencies.map { "👉 \($0) is an unused depdnency" }
+        var warningText = "warning: \(unusedDependencies.count) Extraneous dependencies found for \(target.name) ⚠️⚠️\n"
+        warningText += unusedDependencies.map { "👉 \($0) is an extraneous depdnency" }
                                          .joined(separator: "\n")
 
         let echoTool = try context.tool(named: "echo")
         return [.buildCommand(
-            displayName: "Unused Dependencies Report",
+            displayName: "Extraneous Dependencies Report",
             executable: echoTool.path,
             arguments: [warningText],
             environment: [:]
