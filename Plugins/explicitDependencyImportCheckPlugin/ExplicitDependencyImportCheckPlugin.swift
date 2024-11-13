@@ -4,18 +4,30 @@ import PackagePlugin
 @main
 struct ExplicitDependencyImportCheckPlugin: BuildToolPlugin {
     func createBuildCommands(context: PluginContext, target: any Target) async throws -> [Command] {
-        let dependeniesNames = findSpmTargetDependencies(fromTarget: target)
-        let sitrepResponse = try findImportsUsedInCode(context: context, path: target.directory.string)
-        let transitiveDependencies = sitrepResponse.subtracting(dependeniesNames)
-        let transitiveDependenciesWithoutCommon = transitiveDependencies.subtracting(systemLibraries)
-        guard transitiveDependenciesWithoutCommon.isEmpty == false else { return [] }
-        return [
-            try exportTransitiveDependenciesAsErrors(
-                transitiveDeps: transitiveDependenciesWithoutCommon,
-                forTarget: target,
-                inContext: context
-            )
-        ]
+        let targetDependencies = findSpmTargetDependencies(fromTarget: target)
+        let importsInCode = try findImportsUsedInCode(context: context, path: target.directory.string)
+        let transitiveDependencies = findTransitiveDependencies(imports: importsInCode, targetDependencies: targetDependencies)
+        let unusedTargetDependencies = findUnusedTargetDependencies(imports: importsInCode, targetDependencies: targetDependencies)
+
+        return (try exportTransitiveDependenciesAsErrors(
+                   transitiveDeps: transitiveDependencies,
+                   forTarget: target,
+                   inContext: context
+                )) +
+                (try exportUnusedDependenciesAsWarnings(
+                   unusedDependencies: unusedTargetDependencies,
+                   forTarget: target,
+                   inContext: context
+                ))
+    }
+
+    func findTransitiveDependencies(imports: Set<String>, targetDependencies: Set<String>) -> Set<String> {
+        return imports.subtracting(targetDependencies)
+                      .subtracting(systemLibraries)
+    }
+
+    func findUnusedTargetDependencies(imports: Set<String>, targetDependencies: Set<String>) -> Set<String> {
+        return targetDependencies.subtracting(imports)
     }
 }
 
@@ -25,20 +37,40 @@ extension ExplicitDependencyImportCheckPlugin {
         transitiveDeps: Set<String>,
         forTarget target: Target,
         inContext context: PluginContext
-    ) throws -> Command {
-        var transitiveDependenciesErrorText = "error: \(transitiveDeps.count) Transitive dependencies found for \(target.name) 🚨🚨🚨"
-        for transitiveDep in transitiveDeps {
-            transitiveDependenciesErrorText += "\n"
-            transitiveDependenciesErrorText += "👉 \(transitiveDep) is a transitive dependency"
-        }
+    ) throws -> [Command] {
+        guard !transitiveDeps.isEmpty else { return [] }
+
+        var transitiveDependenciesErrorText = "error: \(transitiveDeps.count) Transitive dependencies found for \(target.name) 🚨🚨🚨\n"
+        transitiveDependenciesErrorText += transitiveDeps.map { "👉 \($0) is a transitive dependency" }
+                                                         .joined(separator: "\n")
+
         let echoTool = try context.tool(named: "echo")
-        return .buildCommand(
+        return [.buildCommand(
             displayName: "Transitive Dependencies Report",
             executable: echoTool.path,
             arguments: [transitiveDependenciesErrorText],
             environment: [:]
-       )
-        
+       )]
+    }
+
+    func exportUnusedDependenciesAsWarnings(
+        unusedDependencies: Set<String>,
+        forTarget target: Target,
+        inContext context: PluginContext
+    ) throws -> [Command] {
+        guard !unusedDependencies.isEmpty else { return [] }
+
+        var warningText = "warning: \(unusedDependencies.count) Unused dependencies found for \(target.name) ⚠️⚠️\n"
+        warningText += unusedDependencies.map { "👉 \($0) is an unused depdnency" }
+                                         .joined(separator: "\n")
+
+        let echoTool = try context.tool(named: "echo")
+        return [.buildCommand(
+            displayName: "Unused Dependencies Report",
+            executable: echoTool.path,
+            arguments: [warningText],
+            environment: [:]
+        )]
     }
 }
 
