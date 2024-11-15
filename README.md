@@ -2,9 +2,12 @@
 
 **explicitDependencyImportCheck** is a Swift build plugin designed to help you enforce clean dependency management by ensuring that only explicitly declared dependencies are imported. Transitive dependencies can cause a range of problems, from bloated builds to fragile code. Swift provides the `--explicit-target-dependency-import-check` flag for this purpose, but it doesn’t work consistently with **XcodeBuild** – and that’s where this plugin steps in! 🚀
 
+This plugin also helps identify module dependencies that are unused and that can be removed from your Package.swift to speed up your builds even more! 
+
 ## 🌟 Features
 
 - **No More Transitive Dependencies**: Catch unwanted transitive imports and keep your code cleaner, faster, and more modular.
+- **No More Unused Dependencies**: Catch dependencies to modules that are unused and unnecessary.
 - **Swift Build Plugin**: Runs automatically during the Swift build process.
 - **Easy Integration**: Just add it to your project to start using!
 
