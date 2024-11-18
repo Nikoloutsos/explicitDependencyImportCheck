@@ -61,7 +61,7 @@ extension ExplicitDependencyImportCheckPlugin {
         guard !unusedDependencies.isEmpty else { return [] }
 
         var warningText = "warning: \(unusedDependencies.count) Extraneous dependencies found for \(target.name) ⚠️⚠️\n"
-        warningText += unusedDependencies.map { "👉 \($0) is an extraneous depdnency" }
+        warningText += unusedDependencies.map { "👉 \($0) is an extraneous dependency" }
                                          .joined(separator: "\n")
 
         let echoTool = try context.tool(named: "echo")
