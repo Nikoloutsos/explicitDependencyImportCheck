@@ -40,7 +40,7 @@ extension ExplicitDependencyImportCheckPlugin {
     ) throws -> [Command] {
         guard !transitiveDeps.isEmpty else { return [] }
 
-        var transitiveDependenciesErrorText = "error: \(transitiveDeps.count) Transitive dependencies found for \(target.name) 🚨🚨🚨\n"
+        var transitiveDependenciesErrorText = "warning: \(transitiveDeps.count) Transitive dependencies found for \(target.name) 🚨🚨🚨\n"
         transitiveDependenciesErrorText += transitiveDeps.map { "👉 \($0) is a transitive dependency" }
                                                          .joined(separator: "\n")
 
