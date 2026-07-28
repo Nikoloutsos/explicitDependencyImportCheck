@@ -56,6 +56,28 @@ Once added, the plugin will automatically check for transitive dependencies each
 
 ![CleanShot 2024-10-30 at 17 44 34@2x](https://github.com/user-attachments/assets/001cf46d-442a-4d6a-94d4-19cb29892e40)
 
+## ⚙️ Configuration
+
+By default, transitive dependencies are reported as errors and unused dependencies are reported as warnings. You can override this behavior by adding `.explicit-dependency-import-check.yml` or `.explicit-dependency-import-check.yaml` to the root of your package:
+
+```yaml
+transitiveDependencySeverity: error
+unusedDependencySeverity: warning
+```
+
+Supported severities are:
+
+- `error`: report the finding and fail the build
+- `warning`: report the finding without failing the build
+- `ignore`: do not report the finding
+
+For example, to report transitive dependencies without failing the build:
+
+```yaml
+transitiveDependencySeverity: warning
+unusedDependencySeverity: warning
+```
+
 
 ## 🤝 Contributions
 
