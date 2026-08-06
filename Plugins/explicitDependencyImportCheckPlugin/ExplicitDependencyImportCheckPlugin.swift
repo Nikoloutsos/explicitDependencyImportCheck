@@ -4,21 +4,24 @@ import PackagePlugin
 @main
 struct ExplicitDependencyImportCheckPlugin: BuildToolPlugin {
     func createBuildCommands(context: PluginContext, target: any Target) async throws -> [Command] {
+        let configuration = try PluginConfiguration.load(from: context)
         let targetDependencies = findSpmTargetDependencies(fromTarget: target)
         let importsInCode = try findImportsUsedInCode(context: context, path: target.directory.string)
         let transitiveDependencies = findTransitiveDependencies(imports: importsInCode, targetDependencies: targetDependencies)
         let unusedTargetDependencies = findUnusedTargetDependencies(imports: importsInCode, targetDependencies: targetDependencies)
 
-        return (try exportTransitiveDependenciesAsErrors(
-                   transitiveDeps: transitiveDependencies,
-                   forTarget: target,
-                   inContext: context
-                )) +
-                (try exportUnusedDependenciesAsWarnings(
-                   unusedDependencies: unusedTargetDependencies,
-                   forTarget: target,
-                   inContext: context
-                ))
+        exportTransitiveDependencies(
+            transitiveDeps: transitiveDependencies,
+            severity: configuration.transitiveDependencySeverity,
+            forTarget: target
+        )
+        exportUnusedDependencies(
+            unusedDependencies: unusedTargetDependencies,
+            severity: configuration.unusedDependencySeverity,
+            forTarget: target
+        )
+
+        return []
     }
 
     func findTransitiveDependencies(imports: Set<String>, targetDependencies: Set<String>) -> Set<String> {
@@ -32,45 +35,37 @@ struct ExplicitDependencyImportCheckPlugin: BuildToolPlugin {
 }
 
 extension ExplicitDependencyImportCheckPlugin {
-    /// This function exports the transitive dependencies to Xcode as an error.
-    func exportTransitiveDependenciesAsErrors(
+    /// This function exports the transitive dependencies to Xcode.
+    func exportTransitiveDependencies(
         transitiveDeps: Set<String>,
-        forTarget target: Target,
-        inContext context: PluginContext
-    ) throws -> [Command] {
-        guard !transitiveDeps.isEmpty else { return [] }
+        severity: DiagnosticSeverity,
+        forTarget target: Target
+    ) {
+        guard !transitiveDeps.isEmpty else { return }
 
-        var transitiveDependenciesErrorText = "warning: \(transitiveDeps.count) Transitive dependencies found for \(target.name) 🚨🚨🚨\n"
-        transitiveDependenciesErrorText += transitiveDeps.map { "👉 \($0) is a transitive dependency" }
-                                                         .joined(separator: "\n")
+        var message = "\(transitiveDeps.count) transitive dependencies found for \(target.name):\n"
+        message += transitiveDeps
+            .sorted()
+            .map { "\($0) is a transitive dependency" }
+            .joined(separator: "\n")
 
-        let echoTool = try context.tool(named: "echo")
-        return [.buildCommand(
-            displayName: "Transitive Dependencies Report",
-            executable: echoTool.path,
-            arguments: [transitiveDependenciesErrorText],
-            environment: [:]
-       )]
+        severity.emit(message)
     }
 
-    func exportUnusedDependenciesAsWarnings(
+    func exportUnusedDependencies(
         unusedDependencies: Set<String>,
-        forTarget target: Target,
-        inContext context: PluginContext
-    ) throws -> [Command] {
-        guard !unusedDependencies.isEmpty else { return [] }
+        severity: DiagnosticSeverity,
+        forTarget target: Target
+    ) {
+        guard !unusedDependencies.isEmpty else { return }
 
-        var warningText = "warning: \(unusedDependencies.count) Extraneous dependencies found for \(target.name) ⚠️⚠️\n"
-        warningText += unusedDependencies.map { "👉 \($0) is an extraneous dependency" }
-                                         .joined(separator: "\n")
+        var message = "\(unusedDependencies.count) extraneous dependencies found for \(target.name):\n"
+        message += unusedDependencies
+            .sorted()
+            .map { "\($0) is an extraneous dependency" }
+            .joined(separator: "\n")
 
-        let echoTool = try context.tool(named: "echo")
-        return [.buildCommand(
-            displayName: "Extraneous Dependencies Report",
-            executable: echoTool.path,
-            arguments: [warningText],
-            environment: [:]
-        )]
+        severity.emit(message)
     }
 }
 
